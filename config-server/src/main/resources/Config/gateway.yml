@@ -11,10 +11,21 @@ spring:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/users/hello
-
-  main:
-    web-application-type: reactive
+            - Path=/api/auth/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
 
 eureka:
   client:
