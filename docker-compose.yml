@@ -1,0 +1,45 @@
+services:
+  postgres:
+    container_name: postgres-sql-bsn
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: imen
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: user-db
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - 5433:5432
+    networks:
+      - spring-demo
+    restart: unless-stopped
+
+  enquete-postgres:
+    container_name: enquete-postgres-sql-bsn
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: imen
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: enquete-db
+    volumes:
+      - enquete-postgres:/data/postgres
+    ports:
+      - 5434:5432  # Attention, on expose un autre port pour éviter conflit avec postgres principal
+    networks:
+      - spring-demo
+    restart: unless-stopped
+
+
+networks:
+  spring-demo:
+    driver: bridge
+
+volumes:
+  postgres:
+    driver: local
+  enquete-postgres:
+    driver: local
+  keycloak:
+    driver: local

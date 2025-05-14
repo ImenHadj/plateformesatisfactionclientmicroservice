@@ -74,15 +74,12 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password",
                                 "/api/auth/google",
-                                "/enquete/respond/{id}",
-                                "/enquete/respond/{enqueteId}"
+                                "/api/auth/role/{role}",
+                               "/api/auth/users/**"
+
                         ).permitAll()
-                        .requestMatchers(
-                                "/admin/enquetes/create",
-                                "/admin/enquetes",
-                                "/admin/enquetes/{id}",
-                                "/admin/enquetes/update/{id}"
-                        ).authenticated()
+                        .requestMatchers(    "/api/auth/reset-password"
+                                ).authenticated()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(e -> e.authenticationEntryPoint(authEntryPointJwt))
@@ -90,6 +87,9 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
+
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();

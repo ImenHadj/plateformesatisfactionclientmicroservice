@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import satisfactionclient.user_service.Dtos.UserDto;
 import satisfactionclient.user_service.Entity.ERole;
 import satisfactionclient.user_service.Entity.Role;
 import satisfactionclient.user_service.Entity.User;
@@ -25,6 +26,7 @@ import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class Authservice {
@@ -96,10 +98,9 @@ public class Authservice {
 
     public String authenticateUser(LoginRequest loginRequest, HttpServletResponse response) {
         try {
-            // Affichez les valeurs pour vérifier qu'elles sont correctes
             System.out.println("Tentative de connexion avec username: " + loginRequest.getUsername());
 
-            // Authentification de l'utilisateur
+            // Authentifie l'utilisateur
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsername(),
@@ -107,39 +108,44 @@ public class Authservice {
                     )
             );
 
-            // Contexte de sécurité
+            // Stocke l'utilisateur authentifié dans le contexte de sécurité
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Génération du JWT
-            String jwt = jwtUtil.generateToken(loginRequest.getUsername());
-
-            // Récupérer l'utilisateur depuis la base de données
+            // Récupération de l'utilisateur depuis la base de données
             User user = userRepository.findByUsername(loginRequest.getUsername())
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-            // Ajouter les informations de l'utilisateur dans un autre cookie
-            String userInfo = "id=1&username=testuser&email=test@example.com";  // Valeur simplifiée pour les tests
-            String encodedUserInfo = URLEncoder.encode(userInfo, "UTF-8");  // Encoder avant d'ajouter au cookie
+            // Récupération des rôles (ex : ["ROLE_ADMIN", "ROLE_USER"])
+            List<String> roles = user.getRoles().stream()
+                    .map(role -> role.getName().name()) // ✅ ERole → String
+                    .collect(Collectors.toList());
+
+            String jwt = jwtUtil.generateToken(user.getId(), user.getUsername(), roles);
+
+            // Ajoute un cookie d'information utilisateur (facultatif)
+            String userInfo = "id=" + user.getId() + "&username=" + user.getUsername();
+            String encodedUserInfo = URLEncoder.encode(userInfo, "UTF-8");
 
             Cookie userCookie = new Cookie("user_info", encodedUserInfo);
             userCookie.setHttpOnly(true);
-            userCookie.setSecure(true);  // Utilisez true seulement en HTTPS
+            userCookie.setSecure(false); // ➕ Met à true si HTTPS
             userCookie.setPath("/");
-            userCookie.setMaxAge(24 * 60 * 60);  // 1 jour
+            userCookie.setMaxAge(24 * 60 * 60);
             response.addCookie(userCookie);
 
-
-            // Création du cookie JWT
+            // Ajoute le JWT dans un cookie sécurisé
             Cookie jwtCookie = new Cookie("jwt", jwt);
-            jwtCookie.setHttpOnly(true);  // Empêche l'accès au cookie via JavaScript
-            jwtCookie.setSecure(true);    // Utilisez true seulement en HTTPS
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setSecure(false); // ➕ Met à true si HTTPS
             jwtCookie.setPath("/");
-            jwtCookie.setMaxAge(24 * 60 * 60);  // Expire après 1 jour
+            jwtCookie.setMaxAge(24 * 60 * 60);
             response.addCookie(jwtCookie);
 
+            // Renvoie le JWT en réponse (si tu veux l’utiliser côté frontend)
             return jwt;
+
         } catch (Exception e) {
-            e.printStackTrace();  // Ajouter un log d'erreur pour déboguer
+            e.printStackTrace();
             throw new RuntimeException("Erreur d'authentification");
         }
     }
@@ -208,5 +214,26 @@ public class Authservice {
     }
 
 
+    public UserDto convertToDto(User user) {
+        UserDto userDto = new UserDto();
+        userDto.setId(user.getId());
+        userDto.setUsername(user.getUsername());
+        userDto.setEmail(user.getEmail());
+
+        // ✅ Convertir les rôles (on prend le premier pour simplifier, sinon on peut en mettre plusieurs)
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            String rolesString = user.getRoles().stream()
+                    .map(role -> role.getName().name()) // getName() retourne ERole
+                    .findFirst()
+                    .orElse("ROLE_ADMIN");  // ou une valeur par défaut
+            userDto.setRole(rolesString);
+        }
+
+        return userDto;
+    }
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    }
 
 }

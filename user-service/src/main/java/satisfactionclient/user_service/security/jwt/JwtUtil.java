@@ -11,6 +11,7 @@ import satisfactionclient.user_service.Repository.UserRepository;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtil {
@@ -26,14 +27,17 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
-    public String generateToken(String username) {
+    public String generateToken(Long userId, String username, List<String> roles) {
         return Jwts.builder()
-                .claim("sub", username)  // Remplace `subject()` par `claim("sub", username)`
+                .subject(String.valueOf(userId)) // standard 'sub'
+                .claim("username", username)
+                .claim("roles", roles) // 🔥 très important pour sécurité
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(key, Jwts.SIG.HS256) // Utilise `Jwts.SIG.HS256` pour la signature
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
+
 
     public String extractUsername(String token) {
         return Jwts.parser()
