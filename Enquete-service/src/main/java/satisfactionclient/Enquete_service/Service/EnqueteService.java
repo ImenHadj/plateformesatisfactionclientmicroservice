@@ -90,19 +90,21 @@ public class EnqueteService {
     }
 
     // Modifier une enquête
-    public Enquete modifierEnquete(Long enqueteId, String titre, String description, LocalDateTime dateExpiration) {
-        Enquete enquete = enqueteRepository.findById(enqueteId).orElseThrow();
-        enquete.setTitre(titre);
-        enquete.setDescription(description);
-        enquete.setDateExpiration(dateExpiration);
-        return enqueteRepository.save(enquete);
-    }
+
 
     // Supprimer une enquête
-    public void supprimerEnquete(Long enqueteId) {
-        Enquete enquete = enqueteRepository.findById(enqueteId).orElseThrow();
+    @Transactional
+    public void deleteEnquete(Long id) {
+        Enquete enquete = enqueteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Enquête non trouvée"));
+
+        // Supprimer les questions associées (si cascade pas activée)
+        questionRepository.deleteAll(enquete.getQuestions());
+
+        // Supprimer l’enquête
         enqueteRepository.delete(enquete);
     }
+
 
     public Question ajouterQuestion(Long enqueteId, String texte, List<String> options, TypeQuestion type) {
         Enquete enquete = enqueteRepository.findById(enqueteId).orElseThrow();
@@ -235,6 +237,8 @@ public class EnqueteService {
 
         return enquetes.stream().map(enquete -> {
             EnqueteResponseDTO dto = new EnqueteResponseDTO();
+            dto.setId(enquete.getId()); // ✅ AJOUT ICI
+
             dto.setTitre(enquete.getTitre());
             dto.setDescription(enquete.getDescription());
             dto.setDateCreation(enquete.getDateCreation());
@@ -297,31 +301,44 @@ public class EnqueteService {
     }
     @Transactional
     public void updateEnquete(Long id, EnqueteResponseDTO updatedDto) {
-        Enquete enquete = enqueteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Enquête non trouvée"));
+        try {
+            Enquete enquete = enqueteRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Enquête non trouvée"));
 
-        enquete.setTitre(updatedDto.getTitre());
-        enquete.setDescription(updatedDto.getDescription());
-        enquete.setDateExpiration(updatedDto.getDateExpiration());
-        enquete.setDatePublication(updatedDto.getDatePublication());
-        enquete.setStatut(updatedDto.getStatut());
+            // ✅ Mise à jour des champs simples
+            enquete.setTitre(updatedDto.getTitre());
+            enquete.setDescription(updatedDto.getDescription());
+            enquete.setDateExpiration(updatedDto.getDateExpiration());
+            enquete.setDatePublication(updatedDto.getDatePublication());
+            enquete.setStatut(updatedDto.getStatut());
 
-        // Supprimer les anciennes questions liées à cette enquête
-        questionRepository.deleteAll(enquete.getQuestions());
-        enquete.getQuestions().clear();
+            // ✅ Étape cruciale : supprimer les anciennes questions proprement
+            List<Question> existingQuestions = new ArrayList<>(enquete.getQuestions());
+            for (Question q : existingQuestions) {
+                q.setEnquete(null); // rompre la liaison pour éviter l’exception Hibernate
+            }
+            enquete.getQuestions().clear();
+            questionRepository.deleteAll(existingQuestions); // supprimer les anciennes
 
-        // Ajouter les nouvelles questions
-        List<Question> newQuestions = updatedDto.getQuestions().stream().map(qDto -> {
-            Question q = new Question();
-            q.setTexte(qDto.getTexte());
-            q.setType(qDto.getType());
-            q.setOptions(qDto.getOptions());
-            q.setEnquete(enquete); // très important
-            return q;
-        }).collect(Collectors.toList());
+            // ✅ Ajouter les nouvelles questions
+            List<Question> newQuestions = updatedDto.getQuestions().stream().map(qDto -> {
+                Question q = new Question();
+                q.setTexte(qDto.getTexte());
+                q.setType(qDto.getType());
+                q.setOptions(qDto.getOptions() != null ? qDto.getOptions() : new ArrayList<>());
+                q.setEnquete(enquete); // important !
+                return q;
+            }).collect(Collectors.toList());
 
-        enquete.setQuestions(newQuestions);
+            enquete.getQuestions().addAll(newQuestions);
 
-        enqueteRepository.save(enquete);
+            // ✅ Sauvegarder (Hibernate va gérer les enfants avec cascade)
+            enqueteRepository.save(enquete);
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de la mise à jour de l’enquête : " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Erreur mise à jour enquête");
+        }
     }
 }

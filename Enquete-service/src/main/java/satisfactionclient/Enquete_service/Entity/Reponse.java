@@ -14,6 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
+@Table(name = "reponse")
 public class Reponse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,10 +38,10 @@ public class Reponse {
 
 
 
-    @Column(name = "valeur_texte", columnDefinition = "TEXT")
+    @Column(name = "valeur_texte", columnDefinition = "text")
     private String valeurTexte;
 
-    @Column(name = "valeurs_choix", columnDefinition = "TEXT")
+    @Column(name = "valeurs_choix", columnDefinition = "text")
     private String valeursChoix;
 
 

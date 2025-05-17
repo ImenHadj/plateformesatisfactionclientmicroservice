@@ -22,20 +22,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+              // .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/enquetes/**","/admin/enquetes","/admin/enquetes/{id}","/admin/enquetes/update/{id}").authenticated()
+                        .requestMatchers("/admin/enquetes/**", "/admin/enquetes", "/admin/enquetes/{id}", "/admin/enquetes/update/{id}").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(Customizer.withDefaults()) // ✅ ✅ version non dépréciée
+                        .jwt(Customizer.withDefaults())
                 )
                 .build();
     }
-
 
     @Bean
     public JwtDecoder jwtDecoder() {
         byte[] secretBytes = Base64.getDecoder().decode(SECRET);
         SecretKeySpec secretKey = new SecretKeySpec(secretBytes, "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(secretKey).build();
-    }}
+    }
+}

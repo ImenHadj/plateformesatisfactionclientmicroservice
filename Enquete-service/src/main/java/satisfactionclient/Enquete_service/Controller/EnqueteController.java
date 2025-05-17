@@ -37,76 +37,6 @@ public class EnqueteController {
     private Emailservice emailService;
 
 
-
-
-
-   /* @PostMapping("/create")
-
-    public ResponseEntity<Enquete> creerEnqueteAvecQuestions(
-            @RequestParam Long adminId, // adminId envoyé depuis le frontend
-            @RequestBody Enquete enquete) {
-
-        // Récupérer l’admin depuis le user-service via Feign
-        UserDto admin = userServiceClient.getUserById(adminId);
-
-        LocalDateTime publicationDate = enquete.getDatePublication();
-        LocalDateTime expirationDate = enquete.getDateExpiration();
-
-        // Appeler le service en passant l’adminId au lieu de User
-        Enquete savedEnquete = enqueteService.creerEnqueteAvecQuestionsEtOptions(
-                enquete.getTitre(),
-                enquete.getDescription(),
-                publicationDate,
-                expirationDate,
-                admin,
-                enquete.getQuestions()
-        );
-
-       /* if (LocalDateTime.now().isAfter(publicationDate) || LocalDateTime.now().isEqual(publicationDate)) {
-            savedEnquete.setStatut(StatutEnquete.PUBLIEE);
-
-            List<UserDto> clients = userServiceClient.getUsersByRole("ROLE_Client");
-            for (UserDto client : clients) {
-                String enqueteLink = "http://localhost:5173/enquete/respond/" + savedEnquete.getId() + "?userId=" + client.getId();
-                emailService.sendEnqueteLink(client.getEmail(), enqueteLink);
-            }
-        }*/
-
-        //return ResponseEntity.status(HttpStatus.CREATED).body(savedEnquete);
-
-  /*  @PostMapping("/create")
-    public ResponseEntity<?> creerEnqueteAvecQuestions(
-            @RequestParam Long adminId,
-            @RequestBody Enquete enquete) {
-
-        // Récupérer l'administrateur via Feign
-        UserDto admin = userServiceClient.getUserById(adminId);
-
-        // 🔍 Vérifie si c'est un admin (en comparant les rôles)
-        boolean isAdmin = userServiceClient.getUsersByRole("ROLE_ADMIN").stream()
-                .anyMatch(u -> u.getId().equals(adminId));
-
-        if (!isAdmin) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Accès refusé : seul un administrateur peut créer une enquête.");
-        }
-
-        // Création de l’enquête
-        LocalDateTime publicationDate = enquete.getDatePublication();
-        LocalDateTime expirationDate = enquete.getDateExpiration();
-
-        Enquete savedEnquete = enqueteService.creerEnqueteAvecQuestionsEtOptions(
-                enquete.getTitre(),
-                enquete.getDescription(),
-                publicationDate,
-                expirationDate,
-                admin,
-                enquete.getQuestions()
-        );
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedEnquete);
-    }*/
-
     @PostMapping("/create")
     public ResponseEntity<?> creerEnqueteAvecQuestions(
             @AuthenticationPrincipal Jwt jwt,
@@ -191,5 +121,14 @@ public class EnqueteController {
     }
 
 
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteEnquete(@PathVariable Long id) {
+        try {
+            enqueteService.deleteEnquete(id);
+            return ResponseEntity.ok("✅ Enquête supprimée avec succès");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("❌ Erreur lors de la suppression de l'enquête");
+        }
+    }
 
 }

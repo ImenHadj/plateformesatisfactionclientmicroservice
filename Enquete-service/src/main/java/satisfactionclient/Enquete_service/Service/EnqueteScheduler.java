@@ -31,24 +31,34 @@ public class EnqueteScheduler {
 
 
 
-    @Scheduled(fixedRate = 60000) // Vérification toutes les minutes
+    @Scheduled(fixedRate = 60000) // Chaque minute
     public void checkAndPublishEnquetes() {
         LocalDateTime now = LocalDateTime.now();
 
         List<Enquete> enquetesToPublish = enqueteRepository.findAllByDatePublicationBeforeAndStatut(now, StatutEnquete.BROUILLON);
 
         for (Enquete enquete : enquetesToPublish) {
+            // Marquer comme publiée
             enquete.setStatut(StatutEnquete.PUBLIEE);
             enqueteRepository.save(enquete);
 
-            List<UserDto> clients = userServiceClient.getUsersByRole("ROLE_Client");
+            // Récupérer tous les utilisateurs ROLE_Client
+            List<UserDto> clients;
+            try {
+                clients = userServiceClient.getUsersByRole("ROLE_Client");
+            } catch (Exception e) {
+                // Logger une erreur si le UserService est indisponible
+                System.err.println("Erreur lors de la récupération des clients : " + e.getMessage());
+                continue;
+            }
 
             for (UserDto client : clients) {
-                String enqueteLink = "http://localhost:5173/enquete/respond/" + enquete.getId() + "?userId=" + client.getId();
-                emailService.sendEnqueteLink(client.getEmail(), enqueteLink);
+                if (client.getEmail() != null && !client.getEmail().isEmpty()) {
+                    String link = "http://localhost:5173/enquete/respond/" + enquete.getId() + "?userId=" + client.getId();
+                    emailService.sendEnqueteLink(client.getEmail(), link);
+                }
             }
         }
-        }
 
-}
+    }}
 
