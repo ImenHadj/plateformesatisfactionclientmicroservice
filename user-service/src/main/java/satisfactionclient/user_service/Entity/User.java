@@ -26,6 +26,8 @@ public class User {
     private String email;
 
     private String password;
+    @Column(name = "active")
+    private Boolean active = true; // true = actif, false = désactivé
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
@@ -71,6 +73,17 @@ public class User {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public Boolean isActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+    public Boolean getActive() {
+        return active;
     }
 }
 

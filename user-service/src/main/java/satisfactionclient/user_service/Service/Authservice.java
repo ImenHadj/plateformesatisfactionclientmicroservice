@@ -214,11 +214,60 @@ public class Authservice {
     }
 
 
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    }
+    public List<UserDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    public UserDto createUser(UserDto dto) {
+        User user = new User();
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode("default123")); // ou dto.getPassword() si tu veux gérer un champ password
+        user.setActive(dto.isActive());
+
+        Role role = roleRepository.findByName(ERole.valueOf(dto.getRole()))
+                .orElseThrow(() -> new RuntimeException("Rôle introuvable"));
+        user.setRoles(Set.of(role));
+
+        return convertToDto(userRepository.save(user));
+    }
+
+    public UserDto updateUser(Long id, UserDto dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
+        user.setActive(dto.isActive());
+
+        Role role = roleRepository.findByName(ERole.valueOf(dto.getRole()))
+                .orElseThrow(() -> new RuntimeException("Rôle introuvable"));
+        Set<Role> newRoles = new HashSet<>();
+        newRoles.add(role);
+        user.setRoles(newRoles);
+        user.setActive(dto.isActive()); // ✅ Ne pas oublier
+
+        return convertToDto(userRepository.save(user));
+    }
+
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+
     public UserDto convertToDto(User user) {
         UserDto userDto = new UserDto();
         userDto.setId(user.getId());
         userDto.setUsername(user.getUsername());
         userDto.setEmail(user.getEmail());
+        userDto.setActive(user.getActive() != null && user.getActive());
+
 
         // ✅ Convertir les rôles (on prend le premier pour simplifier, sinon on peut en mettre plusieurs)
         if (user.getRoles() != null && !user.getRoles().isEmpty()) {
@@ -231,9 +280,4 @@ public class Authservice {
 
         return userDto;
     }
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-    }
-
 }

@@ -9,6 +9,7 @@ public class UserDto {
     private String username;
     private String email;
     private String role; // ✅ On garde comme String
+    private Boolean active; // optionnel si tu veux gérer l’activation
 
     // Getters et Setters
     public Long getId() { return id; }
@@ -22,5 +23,8 @@ public class UserDto {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public boolean isActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
+
 }
 

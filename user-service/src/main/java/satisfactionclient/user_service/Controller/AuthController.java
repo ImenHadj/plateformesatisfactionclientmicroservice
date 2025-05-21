@@ -224,7 +224,8 @@ public class AuthController {
        }
    }
 
-    @PermitAll
+
+
     @GetMapping("/users/{id}")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         User user = authService.getUserById(id);  // À ajouter dans le service si nécessaire
@@ -232,5 +233,39 @@ public class AuthController {
         return ResponseEntity.ok(userDto);
     }
 
+    // ✅ Lister tous les utilisateurs
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers() {
+        List<UserDto> users = authService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<?> createUser(@RequestBody UserDto userDto) {
+        UserDto createdUser = authService.createUser(userDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+
+    @PutMapping("/users/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
+        UserDto updatedUser = authService.updateUser(id, userDto);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        authService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/users/{id}/toggle-active")
+    public ResponseEntity<?> toggleUserActiveStatus(@PathVariable Long id) {
+        User user = authService.getUserById(id);
+        user.setActive(!user.isActive());
+        userRepository.save(user);
+
+        String status = user.isActive() ? "activé" : "désactivé";
+        return ResponseEntity.ok("Utilisateur " + status + " avec succès.");
+    }
 
 }
