@@ -1,4 +1,7 @@
+# version: '3.8'
+
 services:
+
   postgres:
     container_name: postgres-sql-bsn
     image: postgres
@@ -26,11 +29,26 @@ services:
     volumes:
       - enquete-postgres:/data/postgres
     ports:
-      - 5434:5432  # Attention, on expose un autre port pour éviter conflit avec postgres principal
+      - 5434:5432
     networks:
       - spring-demo
     restart: unless-stopped
 
+  reclamation-postgres:
+    container_name: reclamation-postgres-sql-bsn
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: imen
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: reclamation-db
+    volumes:
+      - reclamation-postgres:/data/postgres
+    ports:
+      - 5435:5432
+    networks:
+      - spring-demo
+    restart: unless-stopped
 
 networks:
   spring-demo:
@@ -40,6 +58,8 @@ volumes:
   postgres:
     driver: local
   enquete-postgres:
+    driver: local
+  reclamation-postgres:
     driver: local
   keycloak:
     driver: local

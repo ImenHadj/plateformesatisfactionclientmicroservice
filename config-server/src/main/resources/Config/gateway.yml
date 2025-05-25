@@ -12,12 +12,16 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/api/auth/**
+
         - id: enquete-service
           uri: lb://enquete-service
           predicates:
             - Path=/enquete/**, /admin/enquetes/**
 
-
+        - id: reclamation-service
+          uri: lb://reclamation-service
+          predicates:
+            - Path=/api/reclamations/**
 
 eureka:
   client:

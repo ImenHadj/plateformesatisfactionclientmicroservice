@@ -67,13 +67,7 @@ public class EnqueteService {
 
         Enquete savedEnquete = enqueteRepository.save(enquete);
 
-        /*if (enquete.getStatut() == StatutEnquete.PUBLIEE) {
-            List<UserDto> clients = userServiceClient.getUsersByRole("ROLE_Client");
-            for (UserDto client : clients){
-                String enqueteLink = "http://localhost:5173/enquete/respond/" + savedEnquete.getId() + "?userId=" + client.getId();
-                emailService.sendEnqueteLink(client.getEmail(), enqueteLink);
-            }
-        }*/
+
 
         return savedEnquete;
     }
