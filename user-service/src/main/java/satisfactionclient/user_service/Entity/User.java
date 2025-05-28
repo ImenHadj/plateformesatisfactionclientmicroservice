@@ -28,6 +28,8 @@ public class User {
     private String password;
     @Column(name = "active")
     private Boolean active = true; // true = actif, false = désactivé
+    @Column(length = 512)
+    private String fcmToken;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
@@ -85,5 +87,14 @@ public class User {
     public Boolean getActive() {
         return active;
     }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
+
 }
 

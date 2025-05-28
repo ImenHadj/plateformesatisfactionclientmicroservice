@@ -42,3 +42,6 @@ logging:
   level:
     org.springframework: INFO
     org.hibernate.SQL: DEBUG
+firebase:
+  server:
+    key: AIzaSyBh4V_XCI2xKHrAc6StBioocz0BkOIT-Fs

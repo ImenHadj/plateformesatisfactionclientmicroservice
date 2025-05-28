@@ -15,7 +15,12 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import satisfactionclient.user_service.Dtos.UserDto;
 import satisfactionclient.user_service.Entity.ERole;
@@ -31,6 +36,7 @@ import satisfactionclient.user_service.security.jwt.JwtUtil;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -54,17 +60,6 @@ public class AuthController {
     public AuthController(Authservice authService) {
         this.authService = authService;
     }
-
-
-
-
-
-
-    /*@PostMapping("/signin")
-    public ResponseEntity<String> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
-        authService.authenticateUser(loginRequest, response);
-        return ResponseEntity.ok("Connexion réussie !");
-    }*/
 
     @PostMapping("/signin")
     public ResponseEntity<Map<String, Object>> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
@@ -108,11 +103,13 @@ public class AuthController {
 
         return ResponseEntity.ok(roles);
     }
+
     @GetMapping("/role/{role}")
     public ResponseEntity<List<User>> getUsersByRole(@PathVariable("role") ERole role) {
         List<User> users = authService.getUsersByRole(role);
         return ResponseEntity.ok(users);
     }
+
     @PostMapping("/forgot-password")
     public String forgotPassword(@RequestParam String email) {
         // Générer un token unique (UUID)
@@ -139,8 +136,35 @@ public class AuthController {
         }
 
     }
-   /* @PostMapping("/google")
-    public ResponseEntity<String> authenticateWithGoogle(@RequestBody Map<String, String> request) {
+
+    /* @PostMapping("/google")
+     public ResponseEntity<String> authenticateWithGoogle(@RequestBody Map<String, String> request) {
+         try {
+             String idTokenString = request.get("idToken");
+
+             if (idTokenString == null || idTokenString.isEmpty()) {
+                 return ResponseEntity.status(400).body("ID token is missing or empty");
+             }
+
+             HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
+             JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
+                     .setAudience(Collections.singletonList(CLIENT_ID))
+                     .build();
+
+             GoogleIdToken idToken = verifier.verify(idTokenString);
+
+             if (idToken != null) {
+                 return ResponseEntity.ok("Token is valid");
+             } else {
+                 return ResponseEntity.status(400).body("Invalid ID token");
+             }
+         } catch (GeneralSecurityException | IOException e) {
+             return ResponseEntity.status(500).body("Error during token verification: " + e.getMessage());
+         }
+     }*/
+    @PostMapping("/google")
+    public ResponseEntity<String> authenticateWithGoogle(@RequestBody Map<String, String> request, HttpServletResponse response) {
         try {
             String idTokenString = request.get("idToken");
 
@@ -157,6 +181,38 @@ public class AuthController {
             GoogleIdToken idToken = verifier.verify(idTokenString);
 
             if (idToken != null) {
+                String email = idToken.getPayload().getEmail();
+
+                // Recherche ou création d’un utilisateur à partir de l’email
+                User user = userRepository.findByUsername(email)
+                        .orElseGet(() -> {
+                            User newUser = new User();
+                            newUser.setUsername(email);
+                            newUser.setPassword(""); // pas de mot de passe Google
+
+                            // ✅ Récupération du rôle depuis la base
+                            Role clientRole = roleRepository.findByName(ERole.ROLE_Client)
+                                    .orElseThrow(() -> new RuntimeException("Rôle 'ROLE_Client' introuvable"));
+
+                            newUser.setRoles(Set.of(clientRole)); // ✅ OK : Set<Role>
+                            return userRepository.save(newUser);
+                        });
+
+                // Conversion des rôles pour le JWT
+                List<String> roles = user.getRoles().stream()
+                        .map(role -> role.getName().name()) // ✅ ERole → String
+                        .collect(Collectors.toList());
+                // Génération du JWT
+                String jwt = jwtUtil.generateToken(user.getId(), user.getUsername(), roles);
+
+                // Création du cookie
+                Cookie cookie = new Cookie("jwt", jwt);
+                cookie.setHttpOnly(true);
+                cookie.setSecure(false); // true en HTTPS
+                cookie.setPath("/");
+                cookie.setMaxAge(24 * 60 * 60);
+                response.addCookie(cookie);
+
                 return ResponseEntity.ok("Token is valid");
             } else {
                 return ResponseEntity.status(400).body("Invalid ID token");
@@ -164,66 +220,7 @@ public class AuthController {
         } catch (GeneralSecurityException | IOException e) {
             return ResponseEntity.status(500).body("Error during token verification: " + e.getMessage());
         }
-    }*/
-   @PostMapping("/google")
-   public ResponseEntity<String> authenticateWithGoogle(@RequestBody Map<String, String> request, HttpServletResponse response) {
-       try {
-           String idTokenString = request.get("idToken");
-
-           if (idTokenString == null || idTokenString.isEmpty()) {
-               return ResponseEntity.status(400).body("ID token is missing or empty");
-           }
-
-           HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
-           JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-           GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
-                   .setAudience(Collections.singletonList(CLIENT_ID))
-                   .build();
-
-           GoogleIdToken idToken = verifier.verify(idTokenString);
-
-           if (idToken != null) {
-               String email = idToken.getPayload().getEmail();
-
-               // Recherche ou création d’un utilisateur à partir de l’email
-               User user = userRepository.findByUsername(email)
-                       .orElseGet(() -> {
-                           User newUser = new User();
-                           newUser.setUsername(email);
-                           newUser.setPassword(""); // pas de mot de passe Google
-
-                           // ✅ Récupération du rôle depuis la base
-                           Role clientRole = roleRepository.findByName(ERole.ROLE_Client)
-                                   .orElseThrow(() -> new RuntimeException("Rôle 'ROLE_Client' introuvable"));
-
-                           newUser.setRoles(Set.of(clientRole)); // ✅ OK : Set<Role>
-                           return userRepository.save(newUser);
-                       });
-
-               // Conversion des rôles pour le JWT
-               List<String> roles = user.getRoles().stream()
-                       .map(role -> role.getName().name()) // ✅ ERole → String
-                       .collect(Collectors.toList());
-               // Génération du JWT
-               String jwt = jwtUtil.generateToken(user.getId(), user.getUsername(), roles);
-
-               // Création du cookie
-               Cookie cookie = new Cookie("jwt", jwt);
-               cookie.setHttpOnly(true);
-               cookie.setSecure(false); // true en HTTPS
-               cookie.setPath("/");
-               cookie.setMaxAge(24 * 60 * 60);
-               response.addCookie(cookie);
-
-               return ResponseEntity.ok("Token is valid");
-           } else {
-               return ResponseEntity.status(400).body("Invalid ID token");
-           }
-       } catch (GeneralSecurityException | IOException e) {
-           return ResponseEntity.status(500).body("Error during token verification: " + e.getMessage());
-       }
-   }
-
+    }
 
 
     @GetMapping("/users/{id}")
@@ -268,4 +265,12 @@ public class AuthController {
         return ResponseEntity.ok("Utilisateur " + status + " avec succès.");
     }
 
-}
+
+    // 🔹 Récupérer les données de l'utilisateur (avec son FCM Token)
+    @GetMapping("/{userId}")
+    public ResponseEntity<User> getUser(@PathVariable Long userId) {
+        User user = authService.getUserById(userId);
+        return ResponseEntity.ok(user);
+    }
+
+   }

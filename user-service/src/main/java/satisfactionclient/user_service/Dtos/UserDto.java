@@ -10,6 +10,7 @@ public class UserDto {
     private String email;
     private String role; // ✅ On garde comme String
     private Boolean active; // optionnel si tu veux gérer l’activation
+    private String fcmToken; // ✅ Ajout du token pour Web Push
 
     // Getters et Setters
     public Long getId() { return id; }
@@ -25,6 +26,7 @@ public class UserDto {
     public void setRole(String role) { this.role = role; }
     public boolean isActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
-
+    public String getFcmToken() { return fcmToken; } // ✅ Getter
+    public void setFcmToken(String fcmToken) { this.fcmToken = fcmToken; } // ✅ Setter
 }
 

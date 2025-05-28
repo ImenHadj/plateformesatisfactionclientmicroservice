@@ -1,6 +1,6 @@
 package satisfactionclient.reclamation_service.reclamation_service.Service;
 
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import satisfactionclient.reclamation_service.reclamation_service.Clients.UserServiceClient;
 import satisfactionclient.reclamation_service.reclamation_service.Dtos.UserDto;
@@ -46,7 +46,6 @@ public class ReclamationService {
 
         return reclamationRepository.save(reclamation);
     }
-
 
 
     public Reclamation mettreAJourStatutParAgent(Long reclamationId, StatutReclamation newStatut, UserDto agent) {

@@ -10,6 +10,7 @@ public class UserDto {
     private String username;
     private String email;
     private List<String> roles; // ✅ Ajouté
+    private String fcmToken; // ✅ Ajout du token pour Web Push
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -22,4 +23,6 @@ public class UserDto {
 
     public List<String> getRoles() { return roles; } // ✅ Getter
     public void setRoles(List<String> roles) { this.roles = roles; } // ✅ Setter
+    public String getFcmToken() { return fcmToken; } // ✅ Getter
+    public void setFcmToken(String fcmToken) { this.fcmToken = fcmToken; } // ✅ Setter
 }

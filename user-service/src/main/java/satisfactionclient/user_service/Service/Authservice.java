@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import satisfactionclient.user_service.Dtos.UserDto;
@@ -25,6 +26,7 @@ import satisfactionclient.user_service.security.services.UserDetailsServiceImpl;
 import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -267,6 +269,7 @@ public class Authservice {
         userDto.setUsername(user.getUsername());
         userDto.setEmail(user.getEmail());
         userDto.setActive(user.getActive() != null && user.getActive());
+        userDto.setFcmToken(user.getFcmToken());
 
 
         // ✅ Convertir les rôles (on prend le premier pour simplifier, sinon on peut en mettre plusieurs)
@@ -280,4 +283,7 @@ public class Authservice {
 
         return userDto;
     }
+
+
+
 }

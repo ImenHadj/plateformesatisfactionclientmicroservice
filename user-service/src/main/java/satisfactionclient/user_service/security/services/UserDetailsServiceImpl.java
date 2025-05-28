@@ -20,10 +20,21 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         this.userRepository = userRepository;
     }
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
-
-        return UserDetailsImpl.build(user);
+    public UserDetails loadUserByUsername(String input) throws UsernameNotFoundException {
+        // 1. Essayer de trouver par username (email, login)
+        return userRepository.findByUsername(input)
+                .map(UserDetailsImpl::build)
+                .orElseGet(() -> {
+                    try {
+                        // 2. Sinon, essayer par ID (convertir input en Long)
+                        Long userId = Long.parseLong(input);
+                        User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found with ID or username: " + input));
+                        return UserDetailsImpl.build(user);
+                    } catch (NumberFormatException e) {
+                        throw new UsernameNotFoundException("Invalid input (not a username or ID): " + input);
+                    }
+                });
     }
+
 }

@@ -16,6 +16,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -24,6 +26,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import satisfactionclient.user_service.security.jwt.AuthEntryPointJwt;
 import satisfactionclient.user_service.security.jwt.JwtFilter;
 
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
 import java.util.List;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -70,21 +74,25 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/signup",
                                 "/api/auth/signin",
+                                "/api/auth/me",
+
                                 "/api/auth/roles",
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password",
                                 "/api/auth/google",
                                 "/api/auth/role/{role}",
-                               "/api/auth/users/**"
+                               "/api/auth/users/**",
+                                "/api/auth/reset-password"
 
-                        ).permitAll()
-                        .requestMatchers(    "/api/auth/reset-password"
-                                ).authenticated()
+                                ).permitAll()
+                        .requestMatchers(                                                                "/api/auth/agents/fcm-token"
+
+                        ).authenticated()
                         .anyRequest().authenticated()
                 )
+
                 .exceptionHandling(e -> e.authenticationEntryPoint(authEntryPointJwt))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 
