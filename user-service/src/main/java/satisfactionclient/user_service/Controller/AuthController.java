@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -163,7 +164,7 @@ public class AuthController {
              return ResponseEntity.status(500).body("Error during token verification: " + e.getMessage());
          }
      }*/
-    @PostMapping("/google")
+   /* @PostMapping("/google")
     public ResponseEntity<String> authenticateWithGoogle(@RequestBody Map<String, String> request, HttpServletResponse response) {
         try {
             String idTokenString = request.get("idToken");
@@ -220,7 +221,62 @@ public class AuthController {
         } catch (GeneralSecurityException | IOException e) {
             return ResponseEntity.status(500).body("Error during token verification: " + e.getMessage());
         }
+    }*/
+    @PostMapping("/google")
+    public ResponseEntity<?> authenticateWithGoogle(@RequestBody Map<String, String> request) {
+        try {
+            String idTokenString = request.get("idToken");
+
+            if (idTokenString == null || idTokenString.isEmpty()) {
+                return ResponseEntity.badRequest().body("ID token manquant.");
+            }
+
+            HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
+            JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
+                    .setAudience(Collections.singletonList(CLIENT_ID))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String email = payload.getEmail();
+
+                User user = userRepository.findByEmail(email);
+                if (user == null) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utilisateur non reconnu.");
+                }
+
+                List<String> roles = user.getRoles().stream()
+                        .map(role -> role.getName().name())
+                        .collect(Collectors.toList());
+
+                String token = jwtUtil.generateToken(user.getId(), user.getUsername(), roles);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("jwt", token);
+                response.put("user", Map.of(
+                        "id", user.getId(),
+                        "username", user.getUsername(),
+                        "email", user.getEmail(),
+                        "roles", roles
+                ));
+
+                return ResponseEntity.ok(response);
+
+            } else {
+                return ResponseEntity.status(400).body("Token Google invalide.");
+            }
+
+        } catch (GeneralSecurityException | IOException e) {
+            return ResponseEntity.status(500).body("Erreur lors de la vérification du token: " + e.getMessage());
+        }
     }
+
+
+
 
 
     @GetMapping("/users/{id}")
@@ -271,6 +327,20 @@ public class AuthController {
     public ResponseEntity<User> getUser(@PathVariable Long userId) {
         User user = authService.getUserById(userId);
         return ResponseEntity.ok(user);
+    }
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        // Supprimer le cookie s’il existe (si JWT est stocké dans un cookie)
+        ResponseCookie jwtCookie = ResponseCookie.from("jwt", "")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .build();
+
+        response.setHeader("Set-Cookie", jwtCookie.toString());
+
+        // Si tu n'utilises pas de cookie, tu peux juste retourner un 200
+        return ResponseEntity.ok("Déconnexion réussie.");
     }
 
    }
