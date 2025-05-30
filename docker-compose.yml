@@ -1,14 +1,12 @@
-# version: '3.8'
+version: '3.8'
 
 services:
-
   postgres:
     container_name: postgres-sql-bsn
     image: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: imen
-      PGDATA: /var/lib/postgresql/data
       POSTGRES_DB: user-db
     volumes:
       - postgres:/data/postgres
@@ -24,7 +22,6 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: imen
-      PGDATA: /var/lib/postgresql/data
       POSTGRES_DB: enquete-db
     volumes:
       - enquete-postgres:/data/postgres
@@ -40,12 +37,44 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: imen
-      PGDATA: /var/lib/postgresql/data
       POSTGRES_DB: reclamation-db
     volumes:
       - reclamation-postgres:/data/postgres
     ports:
       - 5435:5432
+    networks:
+      - spring-demo
+    restart: unless-stopped
+
+  metabase-postgres:
+    container_name: metabase-postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: imen
+      POSTGRES_DB: metabase
+    volumes:
+      - metabase-postgres:/data/postgres
+    ports:
+      - 5436:5432
+    networks:
+      - spring-demo
+    restart: unless-stopped
+
+  metabase:
+    image: metabase/metabase
+    container_name: metabase
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: postgres
+      MB_DB_PASS: imen
+      MB_DB_HOST: metabase-postgres
+    depends_on:
+      - metabase-postgres
     networks:
       - spring-demo
     restart: unless-stopped
@@ -61,5 +90,5 @@ volumes:
     driver: local
   reclamation-postgres:
     driver: local
-  keycloak:
+  metabase-postgres:
     driver: local

@@ -21,16 +21,18 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-              // .cors(Customizer.withDefaults())
+        http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/enquete/respond/**").permitAll()
                         .requestMatchers("/admin/enquetes/**", "/admin/enquetes", "/admin/enquetes/{id}", "/admin/enquetes/update/{id}").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(Customizer.withDefaults())
                 )
-                .build();
+                .csrf(csrf -> csrf.disable()); // désactive CSRF pour éviter les erreurs sur POST en CORS
+
+        return http.build();
     }
 
     @Bean
@@ -39,4 +41,6 @@ public class SecurityConfig {
         SecretKeySpec secretKey = new SecretKeySpec(secretBytes, "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(secretKey).build();
     }
+
+
 }
