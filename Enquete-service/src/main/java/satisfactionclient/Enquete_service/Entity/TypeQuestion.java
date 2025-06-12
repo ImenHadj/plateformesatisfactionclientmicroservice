@@ -17,14 +17,11 @@ public enum TypeQuestion {
     DEVISE,             // Montant en argent (ex: euros, dollars)
     EMAIL,              // Validation d’un email
     TELEPHONE,          // Numéro de téléphone avec validation
-    URL,                // Lien web avec validation
     FICHIER,            // Téléversement de fichier (ex: PDF, image)
     LOCALISATION,       // Capture d’une position GPS
     SIGNATURE,          // Saisie d’une signature numérique (via un canvas interactif)
     SLIDER,             // Curseur pour sélectionner une valeur entre deux bornes
     MATRICE,            // Réponses sous forme de tableau (ex: notation de plusieurs critères)
-    CAPTCHA,            // Sécurité anti-bot
-    QR_CODE,            // Scanne un QR code et enregistre le résultat
     IMAGE,              // Réponse sous forme de photo prise avec la caméra
     DESSIN,             // Réponse sous forme de dessin libre (ex: signature électronique)
     CODE_PIN,           // Saisie sécurisée d’un code à 4-6 chiffres (ex: validation bancaire)

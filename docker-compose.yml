@@ -79,6 +79,18 @@ services:
       - spring-demo
     restart: unless-stopped
 
+  ia-service:
+    build:
+      context: ./microservice-ia
+    container_name: ia-service
+    ports:
+      - "8000:8000"
+    networks:
+      - spring-demo
+    restart: unless-stopped
+    depends_on:
+      - enquete-postgres
+
 networks:
   spring-demo:
     driver: bridge

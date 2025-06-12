@@ -155,9 +155,7 @@ public class EnqueteService {
             case EMAIL:
             case TELEPHONE:
 
-            case CHOIX_COULEUR:
-                reponse.setValeurTexte(dto.getTexteReponse());
-                break;
+
 
             case CHOIX_SIMPLE:
             case OUI_NON:
@@ -212,8 +210,7 @@ public class EnqueteService {
                 reponse.setValeurTexte(dto.getTexteReponse());
                 break;
 
-            case CAPTCHA:
-            case QR_CODE:
+
             case CODE_PIN:
                 reponse.setValeurTexte(dto.getTexteReponse());
                 break;

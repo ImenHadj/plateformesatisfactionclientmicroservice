@@ -24,10 +24,7 @@ public enum TypeReponse {
     SIGNATURE,          // Saisie d’une signature numérique (via un canvas interactif)
     SLIDER,             // Curseur pour sélectionner une valeur entre deux bornes
     MATRICE,            // Réponses sous forme de tableau (ex: notation de plusieurs critères)
-    CAPTCHA,            // Sécurité anti-bot
-    QR_CODE,            // Scanne un QR code et enregistre le résultat
     IMAGE,              // Réponse sous forme de photo prise avec la caméra
     DESSIN,             // Réponse sous forme de dessin libre (ex: signature électronique)
     CODE_PIN,           // Saisie sécurisée d’un code à 4-6 chiffres (ex: validation bancaire)
-    CHOIX_COULEUR       //
 }
