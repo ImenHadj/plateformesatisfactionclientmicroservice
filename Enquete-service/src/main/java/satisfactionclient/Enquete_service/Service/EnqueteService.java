@@ -3,13 +3,16 @@ package satisfactionclient.Enquete_service.Service;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import satisfactionclient.Enquete_service.Clients.IAFeignClient;
 import satisfactionclient.Enquete_service.Clients.UserServiceClient;
-import satisfactionclient.Enquete_service.Dto.EnqueteResponseDTO;
-import satisfactionclient.Enquete_service.Dto.QuestionDTO;
-import satisfactionclient.Enquete_service.Dto.ReponseDTO;
-import satisfactionclient.Enquete_service.Dto.UserDto;
+import satisfactionclient.Enquete_service.Dto.*;
 import satisfactionclient.Enquete_service.Entity.*;
 import satisfactionclient.Enquete_service.Repository.EnqueteRepository;
 import satisfactionclient.Enquete_service.Repository.QuestionRepository;
@@ -38,10 +41,21 @@ public class EnqueteService {
     private Emailservice emailService;
     @Autowired
     private ReponseRepository reponseRepository;
+    @Autowired
 
+    private  IAFeignClient iaFeignClient;
+    @Autowired
 
-    public EnqueteService(EnqueteRepository enqueteRepository) {
+    private RestTemplate restTemplate;
+
+    public EnqueteService(
+            EnqueteRepository enqueteRepository,
+            IAFeignClient iaFeignClient,RestTemplate restTemplate
+    ) {
         this.enqueteRepository = enqueteRepository;
+        this.iaFeignClient = iaFeignClient;
+        this.restTemplate = restTemplate;
+
     }
 
 
@@ -332,4 +346,90 @@ public class EnqueteService {
             throw new RuntimeException("Erreur mise à jour enquête");
         }
     }
+    public Enquete creerEnqueteAvecIA(String titre, String description,
+                                      LocalDateTime datePublication,
+                                      LocalDateTime dateExpiration,
+                                      UserDto admin) {
+
+        Enquete enquete = new Enquete();
+        enquete.setTitre(titre);
+        enquete.setDescription(description);
+        enquete.setDateCreation(LocalDateTime.now());
+        enquete.setDatePublication(datePublication);
+        enquete.setDateExpiration(dateExpiration);
+        enquete.setStatut(datePublication.isBefore(LocalDateTime.now())
+                ? StatutEnquete.PUBLIEE
+                : StatutEnquete.BROUILLON);
+        enquete.setAdminId(admin.getId());
+
+        // === Appel IA avec RestTemplate au lieu de iaFeignClient ===
+        EnqueteIARequest iaRequest = new EnqueteIARequest();
+        iaRequest.setTitre(titre);
+        iaRequest.setDescription(description);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<EnqueteIARequest> request = new HttpEntity<>(iaRequest, headers);
+
+        String url = "http://localhost:8000/generate-questions";
+
+        ResponseEntity<EnqueteIAResponse> response = restTemplate.postForEntity(
+                url, request, EnqueteIAResponse.class);
+
+        EnqueteIAResponse iaResponse = response.getBody();
+
+        List<Question> questions = iaResponse.getQuestions().stream().map(qia -> {
+            Question q = new Question();
+            q.setTexte(qia.getQuestion());
+            q.setType(mapTypeToEnum(qia.getType())); // conversion String -> Enum TypeQuestion
+            q.setOptions(qia.getChoices());
+            q.setEnquete(enquete);
+            return q;
+        }).collect(Collectors.toList());
+
+        enquete.setQuestions(questions);
+        return enqueteRepository.save(enquete);
+    }
+
+    private TypeQuestion mapTypeToEnum(String type) {
+        switch (type.toLowerCase()) {
+            case "question ouverte": return TypeQuestion.OUVERT;
+            case "échelle de satisfaction": return TypeQuestion.LIKERT;
+            case "choix simple": return TypeQuestion.CHOIX_SIMPLE;
+            case "choix multiple": return TypeQuestion.CHOIX_MULTIPLE;
+            case "notation": return TypeQuestion.NOTE;
+            case "oui/non": return TypeQuestion.OUI_NON;
+            default: return TypeQuestion.OUVERT;
+        }
+    }
+    public List<QuestionDTO> genererQuestionsAvecIA(String titre, String description) {
+        // === Préparer la requête IA ===
+        EnqueteIARequest iaRequest = new EnqueteIARequest();
+        iaRequest.setTitre(titre);
+        iaRequest.setDescription(description);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<EnqueteIARequest> request = new HttpEntity<>(iaRequest, headers);
+
+        String url = "http://localhost:8000/generate-questions";
+
+        // === Appel IA ===
+        ResponseEntity<EnqueteIAResponse> response = restTemplate.postForEntity(
+                url, request, EnqueteIAResponse.class);
+
+        EnqueteIAResponse iaResponse = response.getBody();
+
+        // === Convertir en DTO sans toucher à l'entité Enquete ===
+        List<QuestionDTO> questions = iaResponse.getQuestions().stream().map(qia -> {
+            QuestionDTO dto = new QuestionDTO();
+            dto.setTexte(qia.getQuestion());
+            dto.setType(mapTypeToEnum(qia.getType()));
+            dto.setOptions(qia.getChoices());
+            return dto;
+        }).collect(Collectors.toList());
+
+        return questions;
+    }
+
 }

@@ -24,7 +24,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/enquete/respond/**").permitAll()
-                        .requestMatchers("/admin/enquetes/**", "/admin/enquetes", "/admin/enquetes/{id}", "/admin/enquetes/update/{id}").authenticated()
+                        .requestMatchers("/admin/enquetes/**", "/admin/enquetes","/admin/enquetes/create-ia", "/admin/enquetes/{id}", "/admin/enquetes/update/{id}").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

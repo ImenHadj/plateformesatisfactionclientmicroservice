@@ -25,5 +25,7 @@ public enum TypeQuestion {
     IMAGE,              // Réponse sous forme de photo prise avec la caméra
     DESSIN,             // Réponse sous forme de dessin libre (ex: signature électronique)
     CODE_PIN,           // Saisie sécurisée d’un code à 4-6 chiffres (ex: validation bancaire)
-    CHOIX_COULEUR       // Sélection d’une couleur dans une palette
+    CHOIX_COULEUR ,      // Sélection d’une couleur dans une palette
+    CAPTCHA,
+    QR_CODE
 }

@@ -3,11 +3,12 @@ package satisfactionclient.Enquete_service.Controller;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import satisfactionclient.Enquete_service.Clients.UserServiceClient;
 import satisfactionclient.Enquete_service.Dto.EnqueteResponseDTO;
+import satisfactionclient.Enquete_service.Dto.QuestionDTO;
 import satisfactionclient.Enquete_service.Dto.UserDto;
 import satisfactionclient.Enquete_service.Entity.Enquete;
 import satisfactionclient.Enquete_service.Entity.Question;
@@ -17,7 +18,10 @@ import satisfactionclient.Enquete_service.Repository.EnqueteRepository;
 import satisfactionclient.Enquete_service.Service.Emailservice;
 import satisfactionclient.Enquete_service.Service.EnqueteService;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -130,5 +134,76 @@ public class EnqueteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("❌ Erreur lors de la suppression de l'enquête");
         }
     }
+   /* @PostMapping("/create-ia")
+    public ResponseEntity<?> creerEnqueteAvecIA(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody Enquete enquete) {
 
+        // Extraire les infos du JWT
+        String userId = jwt.getSubject();
+        List<String> roles = jwt.getClaimAsStringList("roles");
+
+        // Vérification du rôle
+        if (roles == null || !roles.contains("ROLE_ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Accès refusé : seul un administrateur peut créer une enquête.");
+        }
+
+        // Récupération des détails de l'utilisateur via Feign
+        UserDto admin = userServiceClient.getUserById(Long.valueOf(userId));
+
+        // Appel du service avec génération automatique de questions via IA
+        Enquete savedEnquete = enqueteService.creerEnqueteAvecIA(
+                enquete.getTitre(),
+                enquete.getDescription(),
+                enquete.getDatePublication(),
+                enquete.getDateExpiration(),
+                admin
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedEnquete);
+    }*/
+
+    @PostMapping("/create-ia")
+    public ResponseEntity<?> genererQuestionsIA(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody Enquete enquete) {
+
+        String userId = jwt.getSubject();
+        List<String> roles = jwt.getClaimAsStringList("roles");
+
+        if (roles == null || !roles.contains("ROLE_ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Accès refusé : seul un administrateur peut générer des questions.");
+        }
+
+        List<QuestionDTO> questions = enqueteService.genererQuestionsAvecIA(
+                enquete.getTitre(), enquete.getDescription()
+        );
+
+        return ResponseEntity.ok(Map.of("questions", questions));
+    }
+
+    @GetMapping("/call")
+    public ResponseEntity<String> testCallToIA() {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("titre", "Satisfaction bancaire");
+        requestMap.put("description", "Je veux des questions sur la qualité du service bancaire.");
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestMap, headers);
+
+        String url = "http://localhost:8000/generate-questions";
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            return ResponseEntity.ok(response.getBody());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur : " + e.getMessage());
+        }
+    }
 }
+
