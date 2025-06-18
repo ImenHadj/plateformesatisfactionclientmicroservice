@@ -58,6 +58,12 @@ spring:
     uploads:
       photos-output-path: ./uploads
 
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
 jwt:
   secret: GnzzsOitlN5w0CjaYODCk62v+/WmDl2HApnaRb/VEJg=
   expirationMs: 86400000

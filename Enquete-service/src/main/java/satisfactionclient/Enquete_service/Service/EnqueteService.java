@@ -10,8 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import satisfactionclient.Enquete_service.Clients.IAFeignClient;
-import satisfactionclient.Enquete_service.Clients.UserServiceClient;
+import satisfactionclient.Enquete_service.Clients.RabbitUserClient;
+//import satisfactionclient.Enquete_service.Clients.UserServiceClient;
 import satisfactionclient.Enquete_service.Dto.*;
 import satisfactionclient.Enquete_service.Entity.*;
 import satisfactionclient.Enquete_service.Repository.EnqueteRepository;
@@ -19,10 +19,7 @@ import satisfactionclient.Enquete_service.Repository.QuestionRepository;
 import satisfactionclient.Enquete_service.Repository.ReponseRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,26 +31,24 @@ public class EnqueteService {
     @Autowired
     private QuestionRepository questionRepository;
 
+    // @Autowired
+    //private UserServiceClient userServiceClient;
     @Autowired
-    private UserServiceClient userServiceClient;
-
+    private RabbitUserClient rabbitTemplate;
     @Autowired
     private Emailservice emailService;
     @Autowired
     private ReponseRepository reponseRepository;
-    @Autowired
 
-    private  IAFeignClient iaFeignClient;
     @Autowired
 
     private RestTemplate restTemplate;
 
     public EnqueteService(
             EnqueteRepository enqueteRepository,
-            IAFeignClient iaFeignClient,RestTemplate restTemplate
+           RestTemplate restTemplate
     ) {
         this.enqueteRepository = enqueteRepository;
-        this.iaFeignClient = iaFeignClient;
         this.restTemplate = restTemplate;
 
     }
@@ -80,7 +75,6 @@ public class EnqueteService {
         enquete.setQuestions(questions);
 
         Enquete savedEnquete = enqueteRepository.save(enquete);
-
 
 
         return savedEnquete;
@@ -142,7 +136,7 @@ public class EnqueteService {
                 .orElseThrow(() -> new RuntimeException("Enquête non trouvée"));
 
         // Récupération de l'utilisateur
-        UserDto utilisateur = userServiceClient.getUserById(userId);
+        UserDto utilisateur = rabbitTemplate.getUserById(userId);
 
         // Récupération des réponses et conversion de chaque DTO en entité Reponse
         List<Reponse> reponses = reponsesDTO.stream()
@@ -168,7 +162,6 @@ public class EnqueteService {
             case TEXTE:
             case EMAIL:
             case TELEPHONE:
-
 
 
             case CHOIX_SIMPLE:
@@ -304,6 +297,7 @@ public class EnqueteService {
                 Collections.emptyList());
         return dto;
     }
+
     @Transactional
     public void updateEnquete(Long id, EnqueteResponseDTO updatedDto) {
         try {
@@ -346,6 +340,7 @@ public class EnqueteService {
             throw new RuntimeException("Erreur mise à jour enquête");
         }
     }
+
     public Enquete creerEnqueteAvecIA(String titre, String description,
                                       LocalDateTime datePublication,
                                       LocalDateTime dateExpiration,
@@ -393,13 +388,20 @@ public class EnqueteService {
 
     private TypeQuestion mapTypeToEnum(String type) {
         switch (type.toLowerCase()) {
-            case "question ouverte": return TypeQuestion.OUVERT;
-            case "échelle de satisfaction": return TypeQuestion.LIKERT;
-            case "choix simple": return TypeQuestion.CHOIX_SIMPLE;
-            case "choix multiple": return TypeQuestion.CHOIX_MULTIPLE;
-            case "notation": return TypeQuestion.NOTE;
-            case "oui/non": return TypeQuestion.OUI_NON;
-            default: return TypeQuestion.OUVERT;
+            case "question ouverte":
+                return TypeQuestion.OUVERT;
+            case "échelle de satisfaction":
+                return TypeQuestion.LIKERT;
+            case "choix simple":
+                return TypeQuestion.CHOIX_SIMPLE;
+            case "choix multiple":
+                return TypeQuestion.CHOIX_MULTIPLE;
+            case "notation":
+                return TypeQuestion.NOTE;
+            case "oui/non":
+                return TypeQuestion.OUI_NON;
+            default:
+                return TypeQuestion.OUVERT;
         }
     }
     public List<QuestionDTO> genererQuestionsAvecIA(String titre, String description) {
@@ -431,5 +433,34 @@ public class EnqueteService {
 
         return questions;
     }
+
+   /* public List<QuestionDTO> genererQuestionsAvecIA(String titre, String description) {
+        // 1. Préparer la requête
+        EnqueteIARequest iaRequest = new EnqueteIARequest();
+        iaRequest.setTitre(titre);
+        iaRequest.setDescription(description);
+
+        // 2. Appel via RabbitMQ
+        List<QuestionIA> questionIAList = iaRpcClient.envoyerRequeteIA(iaRequest);
+
+        if (questionIAList == null || questionIAList.isEmpty()) {
+            throw new RuntimeException("Erreur IA : aucune question générée.");
+        }
+
+        // 3. Conversion en DTOs
+        List<QuestionDTO> questions = new ArrayList<>();
+        for (QuestionIA qia : questionIAList) {
+            QuestionDTO dto = new QuestionDTO();
+            dto.setTexte(qia.getQuestion());
+            dto.setType(mapTypeToEnum(qia.getType()));
+
+            List<String> choices = qia.getChoices();
+            dto.setOptions(choices != null ? choices : Collections.emptyList());
+
+            questions.add(dto);
+        }
+
+        return questions;
+    }*/
 
 }

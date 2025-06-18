@@ -31,7 +31,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-         secret-key: GnzzsOitlN5w0CjaYODCk62v+/WmDl2HApnaRb/VEJg=
+          secret-key: GnzzsOitlN5w0CjaYODCk62v+/WmDl2HApnaRb/VEJg=
       client:
         registration:
           google:
@@ -58,6 +58,12 @@ spring:
             enable: true
             required: true
 
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
 file:
   uploads:
     photos-output-path: ./uploads
@@ -81,11 +87,9 @@ logging:
     org.springframework.security.oauth2.server.resource: DEBUG
     org.springframework.security.authentication: DEBUG
 
-
 feign:
   client:
     config:
       default:
-        connectTimeout: 10000       # 10 secondes pour se connecter
-        readTimeout: 120000         # ⬅️ 120 secondes pour attendre la réponse
-
+        connectTimeout: 10000
+        readTimeout: 120000

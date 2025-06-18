@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import satisfactionclient.user_service.Dtos.UserDto;
 import satisfactionclient.user_service.Entity.ERole;
 import satisfactionclient.user_service.Entity.Role;
@@ -217,10 +218,7 @@ public class Authservice {
 
 
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-    }
+
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(this::convertToDto)
@@ -284,6 +282,63 @@ public class Authservice {
         return userDto;
     }
 
+    public List<UserDto> getUsersByRole(String roleStr) {
+        // ✅ Convertir String vers Enum
+        ERole roleEnum = ERole.valueOf(roleStr); // Attention à la casse (ex: "ROLE_ADMIN")
 
+        // ✅ Appeler le repository
+        List<User> users = userRepository.findByRoles_Name(roleEnum);
+
+        // ✅ Mapper User → UserDto
+        return users.stream()
+                .map(user -> {
+                    UserDto dto = new UserDto();
+                    dto.setId(user.getId());
+                    dto.setUsername(user.getUsername());
+                    dto.setEmail(user.getEmail());
+                    dto.setActive(user.isActive());
+                    dto.setFcmToken(user.getFcmToken());
+
+                    // Extraire le premier rôle (enum ERole) → String
+                    if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+                        dto.setRole(user.getRoles().stream()
+                                .map(Role::getName)
+                                .map(Enum::name)
+                                .findFirst()
+                                .orElse(null));
+                    }
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getUserdtoById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Force chargement des rôles
+        user.getRoles().size();
+
+        UserDto dto = new UserDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+
+        // Prend le premier rôle s’il existe
+        if (!user.getRoles().isEmpty()) {
+            dto.setRole(user.getRoles().iterator().next().getName().name());
+        }
+
+        dto.setActive(user.isActive());
+        dto.setFcmToken(user.getFcmToken());
+        return dto;
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    }
 
 }

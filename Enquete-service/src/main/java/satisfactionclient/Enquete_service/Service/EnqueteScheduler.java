@@ -4,7 +4,7 @@ package satisfactionclient.Enquete_service.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import satisfactionclient.Enquete_service.Clients.UserServiceClient;
+import satisfactionclient.Enquete_service.Clients.RabbitUserClient;
 import satisfactionclient.Enquete_service.Dto.UserDto;
 import satisfactionclient.Enquete_service.Entity.Enquete;
 import satisfactionclient.Enquete_service.Entity.StatutEnquete;
@@ -19,9 +19,10 @@ public class EnqueteScheduler {
 
 
     private final EnqueteRepository enqueteRepository;
+   // @Autowired
+   // private UserServiceClient userServiceClient;  // Remplace Authservice
     @Autowired
-    private UserServiceClient userServiceClient;  // Remplace Authservice
-
+    private RabbitUserClient rabbitTemplate;
     @Autowired
     private Emailservice emailService;
     public EnqueteScheduler(EnqueteRepository enqueteRepository) {
@@ -45,7 +46,7 @@ public class EnqueteScheduler {
             // Récupérer tous les utilisateurs ROLE_Client
             List<UserDto> clients;
             try {
-                clients = userServiceClient.getUsersByRole("ROLE_Client");
+                clients = rabbitTemplate.getUsersByRole("ROLE_Client");
             } catch (Exception e) {
                 // Logger une erreur si le UserService est indisponible
                 System.err.println("Erreur lors de la récupération des clients : " + e.getMessage());

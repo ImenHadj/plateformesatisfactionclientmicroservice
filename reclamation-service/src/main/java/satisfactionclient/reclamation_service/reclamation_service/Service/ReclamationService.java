@@ -1,7 +1,9 @@
 package satisfactionclient.reclamation_service.reclamation_service.Service;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import satisfactionclient.reclamation_service.reclamation_service.Clients.RabbitUserClient;
 import satisfactionclient.reclamation_service.reclamation_service.Clients.UserServiceClient;
 import satisfactionclient.reclamation_service.reclamation_service.Dtos.UserDto;
 import satisfactionclient.reclamation_service.reclamation_service.Entity.Reclamation;
@@ -18,13 +20,14 @@ import java.util.Optional;
 
 @Service
 public class ReclamationService {
-
+    @Autowired
+    private RabbitUserClient rabbitTemplate;
     private final ReclamationRepository reclamationRepository;
-    private final UserServiceClient userServiceClient;
+   // private final UserServiceClient userServiceClient;
 
-    public ReclamationService(ReclamationRepository reclamationRepository, UserServiceClient userServiceClient) {
+    public ReclamationService(ReclamationRepository reclamationRepository/* UserServiceClient userServiceClient*/) {
         this.reclamationRepository = reclamationRepository;
-        this.userServiceClient = userServiceClient;
+        //this.userServiceClient = userServiceClient;
     }
 
 

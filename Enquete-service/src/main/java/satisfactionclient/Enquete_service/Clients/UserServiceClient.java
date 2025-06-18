@@ -9,14 +9,13 @@ import satisfactionclient.Enquete_service.Dto.UserDto;
 
 import java.util.List;
 
-@FeignClient(name = "USER-SERVICE", url = "http://localhost:8081")
+/*@FeignClient(name = "USER-SERVICE", url = "http://localhost:8081")
 public interface UserServiceClient {
 
-   // @GetMapping("/api/users/{id}")
-    //UserDto getUserById(@PathVariable Long id);
+
 
     @GetMapping("/api/auth/role/{role}")
     List<UserDto> getUsersByRole(@PathVariable String role);
     @GetMapping("/api/auth/users/{id}")
     UserDto getUserById(@PathVariable("id") Long id);
-}
+}*/

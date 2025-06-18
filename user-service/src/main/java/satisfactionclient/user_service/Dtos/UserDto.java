@@ -3,8 +3,11 @@ package satisfactionclient.user_service.Dtos;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 
-public class UserDto {
+public class UserDto implements Serializable {  // ✅ 1. Implements Serializable
+    private static final long serialVersionUID = 1L; // ✅ 2. Bonnes pratiques
+
     private Long id;
     private String username;
     private String email;

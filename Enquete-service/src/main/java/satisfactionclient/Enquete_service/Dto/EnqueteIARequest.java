@@ -1,10 +1,17 @@
 package satisfactionclient.Enquete_service.Dto;
 
-public class EnqueteIARequest {
+import java.io.Serializable;
+
+public class EnqueteIARequest implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String titre;
     private String description;
 
-    // Getters and setters
+    // Constructeur vide (requis pour Jackson)
+    public EnqueteIARequest() {}
+
+    // Getters et Setters
     public String getTitre() {
         return titre;
     }
