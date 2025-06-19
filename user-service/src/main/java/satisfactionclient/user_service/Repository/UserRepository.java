@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import satisfactionclient.user_service.Entity.ERole;
 import satisfactionclient.user_service.Entity.User;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,4 +20,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByEmail(String email);
 
     public List<User> findByRoles_Name(ERole role);
+
+    long countByActiveTrue();
+    long countByActiveFalse();
+    long countByCreatedAtAfter(LocalDateTime date);
+
+    long countByRoles_NameAndActive(ERole role, boolean active);
 }

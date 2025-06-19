@@ -342,5 +342,14 @@ public class AuthController {
         // Si tu n'utilises pas de cookie, tu peux juste retourner un 200
         return ResponseEntity.ok("Déconnexion réussie.");
     }
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("activeUsers", authService.countActiveUsers());
+        stats.put("inactiveUsers", authService.countInactiveUsers());
+        stats.put("newUsers", authService.countNewUsersThisWeek());
+        stats.put("roleDistribution", authService.countUsersByRole());
+        return ResponseEntity.ok(stats);
+    }
 
    }

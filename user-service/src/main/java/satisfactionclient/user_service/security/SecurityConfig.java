@@ -82,7 +82,8 @@ public class SecurityConfig {
                                 "/api/auth/google",
                                 "/api/auth/role/{role}",
                                "/api/auth/users/**",
-                                "/api/auth/reset-password"
+                                "/api/auth/reset-password",
+                                "/api/auth/stats"
 
                                 ).permitAll()
                         .requestMatchers(                                                                "/api/auth/agents/fcm-token"

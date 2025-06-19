@@ -18,6 +18,8 @@ public class RabbitMQConfig {
     public static final String USER_RESPONSE_QUEUE = "user.response.queue";
     public static final String IA_REQUEST_QUEUE = "ia.request.queue";
     public static final String IA_RESPONSE_QUEUE = "ia.response.queue";
+    public static final String USER_BY_ROLE_QUEUE = "user.byrole.queue";
+
 
 
     @Bean
@@ -39,7 +41,10 @@ public class RabbitMQConfig {
     public Queue iaResponseQueue() {
         return new Queue(IA_RESPONSE_QUEUE, true); // ✅ aussi pour la réponse
     }
-
+    @Bean
+    public Queue userByRoleQueue() {
+        return new Queue(USER_BY_ROLE_QUEUE,false);
+    }
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {
         Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();

@@ -39,7 +39,6 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
-        // ✅ Ignore public endpoints
         if (path.startsWith("/api/auth/") || path.startsWith("/enquete/respond/")) {
             filterChain.doFilter(request, response);
             return;

@@ -22,7 +22,7 @@ public class CorsConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
 
         // Autoriser tous les headers
-        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "Accept", "X-Requested-With"));
+        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "Accept", "X-Requested-With","Cache-Control"));
 
         // Permettre les cookies/token via header
         config.setAllowCredentials(true);

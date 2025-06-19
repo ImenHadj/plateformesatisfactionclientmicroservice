@@ -9,6 +9,7 @@ import satisfactionclient.Enquete_service.Dto.UserDto;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -23,23 +24,26 @@ public class RabbitUserClient {
 
     public List<UserDto> getUsersByRole(String role) {
         Object response = rabbitTemplate.convertSendAndReceive(
-                RabbitMQConfig.USER_REQUEST_QUEUE, role);
+                RabbitMQConfig.USER_BY_ROLE_QUEUE, role
+        );
 
-        if (response instanceof List<?> list) {
-            List<UserDto> users = new ArrayList<>();
-            for (Object item : list) {
-                if (item instanceof LinkedHashMap map) {
-                    UserDto user = new UserDto();
-                    user.setId(Long.valueOf(map.get("id").toString()));
-                    user.setUsername((String) map.get("username"));
-                    user.setEmail((String) map.get("email"));
-                    users.add(user);
-                }
+        if (response instanceof byte[] data) {
+            try {
+                String json = new String(data, StandardCharsets.UTF_8);
+                System.out.println("✅ JSON reçu : " + json);
+
+                ObjectMapper mapper = new ObjectMapper();
+                return Arrays.asList(mapper.readValue(json, UserDto[].class)); // 🔥 liste
+
+            } catch (Exception e) {
+                System.err.println("❌ Erreur lors du parsing JSON : " + e.getMessage());
+                e.printStackTrace();
             }
-            return users;
-        } else {
-            return List.of(); // ou null selon ta stratégie
-        }}
+        }
+
+        System.out.println("⚠️ Réponse non gérée : " + (response != null ? response.getClass().getName() : "null"));
+        return List.of(); // ou null
+    }
 
     public UserDto getUserById(Long id) {
         System.out.println("➡️ Envoi d’une requête pour l'utilisateur ID: " + id);

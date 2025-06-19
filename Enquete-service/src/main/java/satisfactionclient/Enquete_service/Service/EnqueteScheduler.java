@@ -47,11 +47,13 @@ public class EnqueteScheduler {
             List<UserDto> clients;
             try {
                 clients = rabbitTemplate.getUsersByRole("ROLE_Client");
+                System.out.println(">> Nombre de clients récupérés : " + clients.size());
             } catch (Exception e) {
-                // Logger une erreur si le UserService est indisponible
-                System.err.println("Erreur lors de la récupération des clients : " + e.getMessage());
+                System.err.println("❌ Erreur RabbitMQ : " + e);
+                e.printStackTrace();
                 continue;
             }
+
 
             for (UserDto client : clients) {
                 if (client.getEmail() != null && !client.getEmail().isEmpty()) {

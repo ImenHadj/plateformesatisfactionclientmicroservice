@@ -25,10 +25,8 @@ import satisfactionclient.user_service.security.jwt.JwtUtil;
 import satisfactionclient.user_service.security.services.UserDetailsServiceImpl;
 
 import java.net.URLEncoder;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -117,6 +115,9 @@ public class Authservice {
             // Récupération de l'utilisateur depuis la base de données
             User user = userRepository.findByUsername(loginRequest.getUsername())
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+            user.setLastLoginAt(LocalDateTime.now());
+            userRepository.save(user);
+
 
             // Récupération des rôles (ex : ["ROLE_ADMIN", "ROLE_USER"])
             List<String> roles = user.getRoles().stream()
@@ -171,32 +172,36 @@ public class Authservice {
             return "Error: Email is already in use!";
         }
 
+        // Si aucun rôle n’est fourni, renvoyer une erreur
+        Set<String> strRoles = signUpRequest.getRole();
+        if (strRoles == null || strRoles.isEmpty()) {
+            return "Error: No role provided!";
+        }
+
+        Set<Role> roles = new HashSet<>();
+
+        for (String role : strRoles) {
+            try {
+                ERole enumRole = ERole.valueOf(role.trim()); // s'assurer que la casse est correcte
+                Role foundRole = roleRepository.findByName(enumRole)
+                        .orElseThrow(() -> new RuntimeException("Error: Role not found in DB: " + role));
+                roles.add(foundRole);
+            } catch (IllegalArgumentException e) {
+                return "Error: Invalid role name: " + role;
+            }
+        }
+
+        // Création de l’utilisateur
         User user = new User();
         user.setUsername(signUpRequest.getUsername());
         user.setEmail(signUpRequest.getEmail());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-
-        Set<String> strRoles = signUpRequest.getRole();
-        Set<Role> roles = new HashSet<>();
-
-        if (strRoles == null || strRoles.isEmpty()) {
-            // Assigning a default role if none is provided
-            Role userRole = roleRepository.findByName(ERole.ROLE_Client)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(userRole);
-        } else {
-            strRoles.forEach(role -> {
-                Role foundRole = roleRepository.findByName(ERole.valueOf(role))
-                        .orElseThrow(() -> new RuntimeException("Error: Role not found."));
-                roles.add(foundRole);
-            });
-        }
-
         user.setRoles(roles);
-        userRepository.save(user);
 
+        userRepository.save(user);
         return "User registered successfully!";
     }
+
 
     public String resetPassword(String email, String newPassword) {
         // Vérifier si l'utilisateur existe avec cet email
@@ -226,18 +231,33 @@ public class Authservice {
     }
 
     public UserDto createUser(UserDto dto) {
+        System.out.println("Role reçu : " + dto.getRole());
+
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
-        user.setPassword(passwordEncoder.encode("default123")); // ou dto.getPassword() si tu veux gérer un champ password
+        user.setPassword(passwordEncoder.encode("default123"));
         user.setActive(dto.isActive());
 
-        Role role = roleRepository.findByName(ERole.valueOf(dto.getRole()))
+        // Trouver la valeur enum
+        ERole eRole;
+        try {
+            eRole = ERole.valueOf(dto.getRole());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Rôle invalide reçu: " + dto.getRole());
+        }
+
+        Role role = roleRepository.findByName(eRole)
                 .orElseThrow(() -> new RuntimeException("Rôle introuvable"));
-        user.setRoles(Set.of(role));
+
+        Set<Role> newRoles = new HashSet<>();
+        newRoles.add(role);
+        user.setRoles(newRoles);
+        user.setActive(dto.isActive());
 
         return convertToDto(userRepository.save(user));
     }
+
 
     public UserDto updateUser(Long id, UserDto dto) {
         User user = userRepository.findById(id)
@@ -339,6 +359,23 @@ public class Authservice {
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    }
+    public long countNewUsersThisWeek() {
+        LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
+        return userRepository.countByCreatedAtAfter(oneWeekAgo);
+    }
+    public Map<String, Long> countUsersByRole() {
+        return userRepository.findAll().stream()
+                .flatMap(user -> user.getRoles().stream())
+                .map(role -> role.getName().name())
+                .collect(Collectors.groupingBy(r -> r, Collectors.counting()));
+    }
+    public long countActiveUsers() {
+        return userRepository.countByActiveTrue();
+    }
+
+    public long countInactiveUsers() {
+        return userRepository.countByActiveFalse();
     }
 
 }

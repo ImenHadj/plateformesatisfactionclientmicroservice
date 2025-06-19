@@ -16,6 +16,8 @@ public class RabbitMQConfig {
     public static final String IA_RESPONSE_QUEUE = "ia.response.queue";
     public static final String RECLAMATION_REQUEST_QUEUE = "reclamation.request.queue";
     public static final String RECLAMATION_RESPONSE_QUEUE = "reclamation.response.queue";
+    public static final String USER_BY_ROLE_QUEUE = "user.byrole.queue";
+
     @Bean
     public Queue userRequestQueue() {
         return new Queue(USER_REQUEST_QUEUE);
@@ -43,6 +45,10 @@ public class RabbitMQConfig {
     @Bean
     public Queue reclamationResponseQueue() {
         return new Queue(RECLAMATION_RESPONSE_QUEUE);
+    }
+    @Bean
+    public Queue userByRoleQueue() {
+        return new Queue(USER_BY_ROLE_QUEUE,false);
     }
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {
