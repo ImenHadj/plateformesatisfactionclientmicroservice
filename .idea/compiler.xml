@@ -11,15 +11,15 @@
         <module name="gateway" />
         <module name="discovery" />
       </profile>
-      <profile name="Annotation profile for Enquete-service" enabled="true">
+      <profile name="Annotation profile for reclamation-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/unknown/lombok-unknown.jar" />
         </processorPath>
-        <module name="Enquete-service" />
         <module name="reclamation-service" />
+        <module name="Enquete-service" />
         <module name="user-service" />
       </profile>
     </annotationProcessing>

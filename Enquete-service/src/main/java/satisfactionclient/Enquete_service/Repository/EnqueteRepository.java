@@ -17,6 +17,11 @@ public interface EnqueteRepository extends JpaRepository<Enquete, Long> {
     List<Enquete> findAllByDatePublicationBeforeAndStatut(LocalDateTime date, StatutEnquete statut);
     @Query("SELECT e FROM Enquete e LEFT JOIN FETCH e.questions WHERE e.id = :id")
     Optional<Enquete> findByIdWithQuestions(@Param("id") Long id);
+
+
+
+    List<Enquete> findByStatut(StatutEnquete statut);
+
 }
 
 

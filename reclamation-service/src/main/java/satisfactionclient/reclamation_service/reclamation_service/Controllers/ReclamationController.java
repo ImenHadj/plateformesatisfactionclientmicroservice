@@ -1,22 +1,16 @@
 package satisfactionclient.reclamation_service.reclamation_service.Controllers;
-
-
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import satisfactionclient.reclamation_service.reclamation_service.Clients.RabbitUserClient;
-import satisfactionclient.reclamation_service.reclamation_service.Clients.UserServiceClient;
 import satisfactionclient.reclamation_service.reclamation_service.Dtos.ReclamationRequestDto;
 import satisfactionclient.reclamation_service.reclamation_service.Dtos.UserDto;
 import satisfactionclient.reclamation_service.reclamation_service.Entity.Reclamation;
 import satisfactionclient.reclamation_service.reclamation_service.Entity.StatutReclamation;
 import satisfactionclient.reclamation_service.reclamation_service.Service.ReclamationService;
-
 import java.util.List;
 
 @RestController
@@ -25,11 +19,9 @@ public class ReclamationController {
     @Autowired
     private RabbitUserClient rabbitTemplate;
     private final ReclamationService reclamationService;
-   // private final UserServiceClient userServiceClient;
 
-    public ReclamationController(ReclamationService reclamationService /*UserServiceClient userServiceClient*/) {
+    public ReclamationController(ReclamationService reclamationService ) {
         this.reclamationService = reclamationService;
-        //this.userServiceClient = userServiceClient;
 
     }
 
@@ -38,11 +30,9 @@ public class ReclamationController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestBody ReclamationRequestDto dto) {
 
-        // 🔐 Récupérer infos depuis le token
         String userId = jwt.getSubject();
         List<String> roles = jwt.getClaimAsStringList("roles");
 
-        // 🔒 Vérification du rôle
         if (roles == null || !roles.contains("ROLE_Client")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Accès refusé : seuls les clients peuvent soumettre une réclamation.");
@@ -50,7 +40,7 @@ public class ReclamationController {
 
         UserDto client = rabbitTemplate.getUserById(Long.valueOf(userId));
 
-        Reclamation saved = reclamationService.creerReclamationAvecStatut(dto.getContenu(), client);
+        Reclamation saved = reclamationService.creerReclamationAvecStatut(dto.getContenu(), dto.getType(), client);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -121,4 +111,6 @@ public class ReclamationController {
 
         return ResponseEntity.ok(reclamationService.getAll());
     }
+
+
 }

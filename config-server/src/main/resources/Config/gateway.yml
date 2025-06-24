@@ -21,7 +21,7 @@ spring:
         - id: reclamation-service
           uri: lb://reclamation-service
           predicates:
-            - Path=/api/reclamations/**
+            - Path=/api/reclamations/**, /api/temoignages/**
 
         - id: ia-service
           uri: http://localhost:8000

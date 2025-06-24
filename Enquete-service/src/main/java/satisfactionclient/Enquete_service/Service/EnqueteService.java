@@ -462,5 +462,9 @@ public class EnqueteService {
 
         return questions;
     }*/
+   public List<Enquete> getEnquetesPubliees() {
+       return enqueteRepository.findByStatut(StatutEnquete.PUBLIEE);
+   }
+
 
 }

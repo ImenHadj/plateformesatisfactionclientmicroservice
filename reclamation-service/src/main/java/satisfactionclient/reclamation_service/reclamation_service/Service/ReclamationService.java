@@ -4,11 +4,11 @@ package satisfactionclient.reclamation_service.reclamation_service.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import satisfactionclient.reclamation_service.reclamation_service.Clients.RabbitUserClient;
-import satisfactionclient.reclamation_service.reclamation_service.Clients.UserServiceClient;
 import satisfactionclient.reclamation_service.reclamation_service.Dtos.UserDto;
 import satisfactionclient.reclamation_service.reclamation_service.Entity.Reclamation;
 import satisfactionclient.reclamation_service.reclamation_service.Entity.StatutHistorique;
 import satisfactionclient.reclamation_service.reclamation_service.Entity.StatutReclamation;
+import satisfactionclient.reclamation_service.reclamation_service.Entity.TypeReclamation;
 import satisfactionclient.reclamation_service.reclamation_service.Repository.ReclamationRepository;
 
 import java.time.LocalDateTime;
@@ -23,17 +23,16 @@ public class ReclamationService {
     @Autowired
     private RabbitUserClient rabbitTemplate;
     private final ReclamationRepository reclamationRepository;
-   // private final UserServiceClient userServiceClient;
 
-    public ReclamationService(ReclamationRepository reclamationRepository/* UserServiceClient userServiceClient*/) {
+    public ReclamationService(ReclamationRepository reclamationRepository) {
         this.reclamationRepository = reclamationRepository;
-        //this.userServiceClient = userServiceClient;
     }
 
 
-    public Reclamation creerReclamationAvecStatut(String contenu, UserDto client) {
+    public Reclamation creerReclamationAvecStatut(String contenu, TypeReclamation type, UserDto client) {
         Reclamation reclamation = new Reclamation();
         reclamation.setContenu(contenu);
+        reclamation.setType(type); // ✅ Ajout du type
         reclamation.setUserId(client.getId());
         reclamation.setDateSoumission(LocalDateTime.now());
         reclamation.setStatut(StatutReclamation.EN_ATTENTE);

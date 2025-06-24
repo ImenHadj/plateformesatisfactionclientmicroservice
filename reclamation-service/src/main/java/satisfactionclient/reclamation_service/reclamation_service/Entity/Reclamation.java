@@ -20,6 +20,10 @@ public class Reclamation {
     @Column(nullable = false)
     private StatutReclamation statut;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TypeReclamation type;
+
     private LocalDateTime dateSoumission;
 
     private Long userId;
@@ -85,6 +89,14 @@ public class Reclamation {
 
     public void setHistorique(List<StatutHistorique> historique) {
         this.historique = historique;
+    }
+
+    public TypeReclamation getType() {
+        return type;
+    }
+
+    public void setType(TypeReclamation type) {
+        this.type = type;
     }
 }
 
